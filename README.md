@@ -49,7 +49,7 @@ Key Features:
 ## API Reference
 All endpoints require header `X-API-Key`. Base URL is `https://<function-app>.azurewebsites.net`.
 
-| Method | Route | Description | Body � Request | Response |
+| Method | Route | Description | Body – Request | Response |
 |--------|-------|-------------|----------------|----------|
 | POST   | `/api/books`          | Create book           | JSON Book fields | 201 + book JSON |
 | GET    | `/api/books`          | List books            | none             | 200 + array of books |
@@ -88,3 +88,27 @@ All endpoints require header `X-API-Key`. Base URL is `https://<function-app>.az
 - **Database access**: add client IP to SQL server firewall.
 
 Feel free to open issues or contribute improvements.
+
+
+flowchart TD
+    client[Client (Thunder/Logic App/Browser)] -->|HTTPS + X-API-Key| func[Azure Function App (Book API)]
+    func -->|EF Core| sql[(Azure SQL Database)]
+    func -->|SecretClient / DefaultAzureCredential| kv[Azure Key Vault]
+    kv ---|Secrets| kvSecrets[(ApiKey, SqlConnectionString)]
+    func --> ai[(Application Insights)]
+    logic[Logic App\n(Recurrence → Get Secret → PATCH /validate → Notify)] -->|HTTP PATCH /api/books/validate\nx-api-key from Key Vault| func
+    logic --> kv
+    logic --> ai
+    dash[Azure Dashboard] --> ai
+    dash --> sql
+    dash --> kv
+    dash --> logic
+    subgraph Infra
+        func
+        sql
+        kv
+        ai
+        logic
+        dash
+    end
+
